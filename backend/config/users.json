@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "123456",
+    "role": "admin"
+  },
+  {
+    "id": 2,
+    "username": "liuzijian",
+    "password": "123456",
+    "role": "reviewer"
+  },
+  {
+    "id": 3,
+    "username": "sunsiyuan",
+    "password": "123456",
+    "role": "reviewer"
+  }
+]
