@@ -4,9 +4,8 @@ import styled from 'styled-components';
 import { Swiper, ImageViewer, Toast, Button } from 'antd-mobile';
 import { SendOutline, LeftOutline, EnvironmentOutline, RightOutline } from 'antd-mobile-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTravelNoteDetail } from '@/store/modules/detail';
+import { fetchDiaryDetail } from '@/store/modules/detail';
 
-// 容器
 const Container = styled.div`
   padding: 52px 0 20px 0;
   background: #fff;
@@ -14,7 +13,6 @@ const Container = styled.div`
   overflow: hidden;
 `;
 
-// 顶部标签
 const TagRow = styled.div`
   margin: 16px 16px 0 16px;
   display: flex;
@@ -31,7 +29,6 @@ const Tag = styled.span`
   display: inline-block;
 `;
 
-// 标题
 const Title = styled.div`
   font-size: 22px;
   font-weight: bold;
@@ -40,7 +37,6 @@ const Title = styled.div`
   line-height: 1.3;
 `;
 
-// 信息卡片
 const InfoCard = styled.div`
   display: flex;
   justify-content: space-between;
@@ -72,7 +68,6 @@ const InfoLabel = styled.div`
   color: #888;
 `;
 
-// 正文内容
 const Content = styled.div`
   font-size: 16px;
   color: #222;
@@ -82,7 +77,6 @@ const Content = styled.div`
   letter-spacing: 0.02em;
 `;
 
-// 头部
 const Header = styled.div`
   position: fixed;
   top: 0;
@@ -186,24 +180,24 @@ const DetailIndex = () => {
   const videoRef = useRef();
   const navigate = useNavigate();
 
-  const carouselHeight = 220; // 统一高度
+  const carouselHeight = 220; 
 
   useEffect(() => {
-    dispatch(fetchTravelNoteDetail(id));
+    dispatch(fetchDiaryDetail(id));
   }, [id, dispatch]);
+
 
   if (loading) return <div>加载中...</div>;
   if (error) return <div>加载失败：{error}</div>;
   if (!detail) return null;
 
-  // 假设 detail.images 是图片数组，detail.video 是视频链接（可选）
+
   const mediaList = detail.video
     ? [ { type: 'video', url: detail.video }, ...detail.images.map(url => ({ type: 'image', url })) ]
     : detail.images.map(url => ({ type: 'image', url }));
 
   const imageList = mediaList.filter(m => m.type === 'image').map(m => m.url);
 
-  // 分享功能
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -224,8 +218,8 @@ const DetailIndex = () => {
           <BackBtn onClick={() => navigate('/')}>
             <LeftOutline style={{ fontSize: 18 }} />
           </BackBtn>
-          <Avatar src={detail.author.avatar} />
-          <Nickname>{detail.author.nickname}</Nickname>
+          <Avatar src={detail.avatar} />
+          <Nickname>{detail.nickname}</Nickname>
         </AuthorRow>
         <RightActions>
           <FollowBtn color="primary" size="small">+ 关注</FollowBtn>

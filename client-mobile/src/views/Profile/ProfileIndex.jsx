@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { Dialog, Toast, Input, TextArea, Button, ImageUploader } from 'antd-mobile';
-import defaultAvatar from '../../assets/img/default-avatar.png';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserInfo, updateUserInfo, changePassword, logout } from '@/store/modules/profile';
+import defaultAvatar from '@/assets/img/default-avatar.png';
 
 const ProfileContainer = styled.div`
   
@@ -120,14 +122,32 @@ const AvatarUploader = styled.div`
 `;
 
 const Profile = () => {
-  const [user, setUser] = useState(() => {
-    return JSON.parse(localStorage.getItem('userInfo') || '{}') || {
-      avatar: defaultAvatar,
-      nickname: '未登录',
-      username: '未登录',
-      bio: '这个人很懒，什么都没有写~'
+  const dispatch = useDispatch();
+  const user = useSelector(state => state.profile.userInfo);
+  const { loading, error } = useSelector(state => state.profile);
+  const id = localStorage.getItem('id');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (id) {
+        try {
+          await dispatch(fetchUserInfo(id)).unwrap();
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        console.log('[DEBUG] Profile组件 - 没有用户ID，无法获取信息');
+      }
     };
-  });
+
+    fetchData();
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    console.log('[DEBUG] Profile组件 - user数据发生变化:', user);
+  }, [user]);
+
+  
 
   const handleImageUpload = async (file) => {
     try {
@@ -140,15 +160,14 @@ const Profile = () => {
         reader.readAsDataURL(file);
       });
     } catch (err) {
-      Toast.show({
-        content: err.message || '图片上传失败',
-        icon: 'fail',
-      });
+      Toast.show({ content: err.message || '图片上传失败', icon: 'fail' });
       return null;
     }
   };
 
   const handleEdit = async () => {
+    if (!user) return;
+
     let newNickname = user.nickname;
     let newBio = user.bio;
     let newAvatar = user.avatar;
@@ -161,7 +180,7 @@ const Profile = () => {
             <div className="avatar-wrapper">
               <img src={newAvatar || defaultAvatar} alt="当前头像" className="default-avatar" />
               <ImageUploader
-                value={newAvatar && newAvatar !== defaultAvatar ? [{ url: newAvatar }] : []}
+                value={newAvatar ? [{ url: newAvatar }] : []}
                 onChange={files => {
                   newAvatar = files.length > 0 ? files[0].url : defaultAvatar;
                 }}
@@ -185,13 +204,13 @@ const Profile = () => {
           />
         </div>
       ),
-      onConfirm: () => {
-        setUser(u => {
-          const updated = { ...u, nickname: newNickname, bio: newBio, avatar: newAvatar };
-          localStorage.setItem('userInfo', JSON.stringify(updated));
+      onConfirm: async () => {
+        try {
+          await dispatch(updateUserInfo({ id: user.id, data: { nickname: newNickname, bio: newBio, avatar: newAvatar } }));
           Toast.show({ content: '修改成功', icon: 'success' });
-          return updated;
-        });
+        } catch (err) {
+          Toast.show({ content: err.message || '修改失败', icon: 'fail' });
+        }
       }
     });
   };
@@ -200,9 +219,7 @@ const Profile = () => {
     let oldPwd = '';
     let newPwd = '';
     let confirmPwd = '';
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    const savedPassword = userInfo.password || ''; // 假设密码保存在这里
-  
+
     await Dialog.confirm({
       title: '修改密码',
       content: (
@@ -226,26 +243,23 @@ const Profile = () => {
           />
         </div>
       ),
-      onConfirm: () => {
+      onConfirm: async () => {
         if (!oldPwd || !newPwd || !confirmPwd) {
           Toast.show({ content: '请填写所有字段', icon: 'fail' });
           return Promise.reject();
         }
-  
-        if (oldPwd !== savedPassword) {
-          Toast.show({ content: '原密码错误', icon: 'fail' });
-          return Promise.reject();
-        }
-  
+
         if (newPwd !== confirmPwd) {
           Toast.show({ content: '两次新密码不一致', icon: 'fail' });
           return Promise.reject();
         }
-  
-        // 更新密码并存入 localStorage
-        const updated = { ...userInfo, password: newPwd };
-        localStorage.setItem('userInfo', JSON.stringify(updated));
-        Toast.show({ content: '密码修改成功', icon: 'success' });
+
+        try {
+          await dispatch(changePassword({ id: user.id, data: { oldPassword: oldPwd, newPassword: newPwd } }));
+          Toast.show({ content: '密码修改成功', icon: 'success' });
+        } catch (e) {
+          Toast.show({ content: e.message || '密码修改失败', icon: 'fail' });
+        }
       }
     });
   };
@@ -254,13 +268,15 @@ const Profile = () => {
     Dialog.confirm({
       content: '确定要退出登录吗？',
       onConfirm: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('userInfo');
+        dispatch(logout());
         window.location.href = '/login';
       }
     });
   };
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>加载失败：{error}</div>;
+  if (!user) return null;
 
   return (
     <ProfileContainer>
@@ -268,8 +284,7 @@ const Profile = () => {
         <TopSection>
           <Avatar src={user.avatar || defaultAvatar} alt="" />
           <InfoBlock>
-            <Nickname>{user.nickname || '未登录'}</Nickname>
-            {/* <Username>用户名：{user.username}</Username> */}
+            <Nickname>{user.nickname || '用户昵称'}</Nickname>
             <Bio>{user.bio || '这个人很懒，什么都没有写~'}</Bio>
           </InfoBlock>
         </TopSection>

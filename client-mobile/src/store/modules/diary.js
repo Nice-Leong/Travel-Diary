@@ -1,49 +1,66 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { addTravelNote } from '@/service/modules/publish';
-import { mockGetTravelNotes } from '@/mock/travelNotes';
+import { diaryService } from '@/service/modules/diary';
 
-// 异步获取游记列表
-export const fetchTravelNotes = createAsyncThunk(
-  'diary/fetchTravelNotes',
-  async () => {
-    const res = await mockGetTravelNotes({ page: 1, pageSize: 100 });
-    return res.data.list;
-  }
-);
+const initialState = {
+  diaryList: [],
+  loading: false,
+  error: null,
+  currentPage: 1,
+  hasMore: true,
+  pageSize: 10
+};
 
-// 异步发布游记
-export const publishTravelNote = createAsyncThunk(
-  'diary/publishTravelNote',
-  async (note, { dispatch }) => {
-    await addTravelNote(note);
-    // 发布成功后刷新列表
-    dispatch(fetchTravelNotes());
+// 异步获取日记列表（分页）
+export const fetchDiaryList = createAsyncThunk(
+  'diary/fetchDiaryList',
+  async ({ page, pageSize, searchKey }, thunkAPI) => {
+    try {
+      const data = await diaryService.getDiaryList(page, pageSize, searchKey);
+      return { data, page };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message || '请求失败');
+    }
   }
 );
 
 const diarySlice = createSlice({
   name: 'diary',
-  initialState: {
-    list: [],
-    loading: false,
-    error: null,
+  initialState,
+  reducers: {
+    resetDiaryList: (state) => {
+      state.diaryList = [];
+      state.currentPage = 1;
+      state.hasMore = true;
+      state.error = null;
+    },
+    setSearchKey: (state, action) => {
+      state.searchKey = action.payload;
+    }
   },
-  reducers: {},
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(fetchTravelNotes.pending, (state) => {
+      .addCase(fetchDiaryList.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchTravelNotes.fulfilled, (state, action) => {
+      .addCase(fetchDiaryList.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        if (action.payload.page === 1) {
+          state.diaryList = action.payload.data;
+        } else {
+          state.diaryList = [...state.diaryList, ...action.payload.data];
+        }
+        state.currentPage += 1;
+        if (action.payload.data.length < state.pageSize) {
+          state.hasMore = false;
+        }
       })
-      .addCase(fetchTravelNotes.rejected, (state, action) => {
+      .addCase(fetchDiaryList.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       });
   }
 });
 
+export const { resetDiaryList, setSearchKey } = diarySlice.actions;
 export default diarySlice.reducer;

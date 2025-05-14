@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Toast, Tabs, ImageUploader } from 'antd-mobile';
 import styled from 'styled-components';
 import defaultAvatar from '@/assets/img/default-avatar.png';
+import { useDispatch } from 'react-redux';  
+import { login, register as registerAction } from '@/store/modules/user';  
+import { userService } from '@/service/modules/user';  
 
 const LoginContainer = styled.div`
   width: 100vw;
@@ -77,10 +80,11 @@ const AvatarUploader = styled.div`
     padding: 0;
     margin: 0;
   }
-`
+`;
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [loginForm] = Form.useForm();
   const [registerForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('login');
@@ -108,62 +112,25 @@ const Login = () => {
     }
   };
 
-  // 检查用户名是否已存在
-  const checkUsername = (username) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    return users.some(user => user.username === username);
-  };
-
-  // 检查昵称是否已存在
-  const checkNickname = (nickname) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    return users.some(user => user.nickname === nickname);
-  };
-
-  // 保存用户信息
-  const saveUser = (userInfo) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    users.push({
-      ...userInfo,
-      avatar: avatar || defaultAvatar,
-      nickname: userInfo.nickname || userInfo.username, // 如果没有设置昵称，使用用户名作为昵称
-    });
-    localStorage.setItem('users', JSON.stringify(users));
-  };
-
   // 登录处理函数
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.username === values.username);
-      
-      if (!checkUsername(values.username)) {
-        Toast.show({
-          content: '用户名不存在！',
-          icon: 'fail',
-        });
-        return;
-      }
+      const response = await userService.login(values);  
+      dispatch(login({ token: response.token, userInfo: response.userInfo })); 
 
-      if (user.password !== values.password) {
-        Toast.show({
-          content: '密码错误！',
-          icon: 'fail',
-        });
-        return;
-      }
 
-      localStorage.setItem('token', 'dummy-token');
-      localStorage.setItem('username', values.username);
-      
+      localStorage.setItem('token', response.token); 
+      localStorage.setItem('id', response.userInfo.id);
+      localStorage.setItem('userInfo', JSON.stringify(response.userInfo));
+
+
       Toast.show({
         content: '登录成功！',
         icon: 'success',
       });
-      
+
       navigate('/', { replace: true });
-      
     } catch (err) {
       Toast.show({
         content: err.message || '登录失败！',
@@ -186,30 +153,18 @@ const Login = () => {
         return;
       }
 
-      if (checkNickname(values.nickname)) {
-        Toast.show({
-          content: '昵称已存在！',
-          icon: 'fail',
-        });
-        return;
-      }
+      // 调用 API 进行注册
+      const response = await userService.register(values);  // 使用 service 层进行 API 请求
 
-      if (checkUsername(values.username)) {
-        Toast.show({
-          content: '用户名已存在！',
-          icon: 'fail',
-        });
-        return;
-      }
+      // 更新 Redux store
+      dispatch(registerAction({
+        token: response.token,
+        userInfo: response.userInfo,
+      }));
 
-      // 保存用户信息
-      saveUser({
-        username: values.username,
-        password: values.password,
-        avatar: avatar === defaultAvatar ? defaultAvatar : avatar, 
-        createTime: new Date().toISOString()
-      });
-      
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('userInfo', JSON.stringify(response.userInfo));
+
       Toast.show({
         content: '注册成功！请登录',
         icon: 'success',
@@ -240,9 +195,6 @@ const Login = () => {
     if (value.length < 3) {
       return Promise.reject(new Error('用户名至少3个字符！'));
     }
-    if (activeTab === 'register' && checkUsername(value)) {
-      return Promise.reject(new Error('用户名已存在！'));
-    }
     return Promise.resolve();
   };
 
@@ -254,32 +206,20 @@ const Login = () => {
     if (value.length < 2) {
       return Promise.reject(new Error('昵称至少2个字符！'));
     }
-    if (checkNickname(value)) {
-      return Promise.reject(new Error('昵称已被使用！'));
-    }
     return Promise.resolve();
   };
 
   return (
     <LoginContainer>
       <LoginCard>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-        >
+        <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <Tabs.Tab title='登录' key='login'>
             <FormContainer>
               <Form
                 form={loginForm}
                 onFinish={handleLogin}
                 footer={
-                  <Button
-                    block
-                    type='submit'
-                    color='primary'
-                    loading={loading}
-                    size='large'
-                  >
+                  <Button block type='submit' color='primary' loading={loading} size='large'>
                     登录
                   </Button>
                 }
@@ -288,38 +228,25 @@ const Login = () => {
                   name='username'
                   rules={[{ required: true, message: '请输入用户名！' }]}
                 >
-                  <Input
-                    placeholder='用户名'
-                    clearable
-                  />
+                  <Input placeholder='用户名' clearable />
                 </Form.Item>
                 <Form.Item
                   name='password'
                   rules={[{ required: true, message: '请输入密码！' }]}
                 >
-                  <Input
-                    placeholder='密码'
-                    type='password'
-                    clearable
-                  />
+                  <Input placeholder='密码' type='password' clearable />
                 </Form.Item>
               </Form>
             </FormContainer>
           </Tabs.Tab>
-          
+
           <Tabs.Tab title='注册' key='register'>
             <FormContainer>
               <Form
                 form={registerForm}
                 onFinish={handleRegister}
                 footer={
-                  <Button
-                    block
-                    type='submit'
-                    color='primary'
-                    loading={loading}
-                    size='large'
-                  >
+                  <Button block type='submit' color='primary' loading={loading} size='large'>
                     注册
                   </Button>
                 }
@@ -330,9 +257,7 @@ const Login = () => {
                     <img src={defaultAvatar} alt="默认头像" className="default-avatar" />
                     <ImageUploader
                       value={avatar && avatar !== defaultAvatar ? [{ url: avatar }] : []}
-                      onChange={files => {
-                        setAvatar(files.length > 0 ? files[0].url : defaultAvatar);
-                      }}
+                      onChange={files => setAvatar(files.length > 0 ? files[0].url : defaultAvatar)}
                       upload={handleImageUpload}
                       showUpload={true}
                       maxCount={1}
@@ -342,28 +267,18 @@ const Login = () => {
 
                 <Form.Item
                   name='nickname'
-                  rules={[
-                    { validator: validateNickname }
-                  ]}
+                  rules={[{ validator: validateNickname }]}
                   validateTrigger='onBlur'
                 >
-                  <Input
-                    placeholder='昵称（至少2个字符）'
-                    clearable
-                  />
+                  <Input placeholder='昵称（至少2个字符）' clearable />
                 </Form.Item>
 
                 <Form.Item
                   name='username'
-                  rules={[
-                    { validator: validateUsername }
-                  ]}
+                  rules={[{ validator: validateUsername }]}
                   validateTrigger='onBlur'
                 >
-                  <Input
-                    placeholder='用户名（至少3个字符）'
-                    clearable
-                  />
+                  <Input placeholder='用户名（至少3个字符）' clearable />
                 </Form.Item>
                 <Form.Item
                   name='password'
@@ -372,11 +287,7 @@ const Login = () => {
                     { min: 6, message: '密码至少6个字符！' }
                   ]}
                 >
-                  <Input
-                    placeholder='密码（至少6个字符）'
-                    type='password'
-                    clearable
-                  />
+                  <Input placeholder='密码（至少6个字符）' type='password' clearable />
                 </Form.Item>
                 <Form.Item
                   name='confirmPassword'
@@ -392,11 +303,7 @@ const Login = () => {
                     }),
                   ]}
                 >
-                  <Input
-                    placeholder='确认密码'
-                    type='password'
-                    clearable
-                  />
+                  <Input placeholder='确认密码' type='password' clearable />
                 </Form.Item>
               </Form>
             </FormContainer>

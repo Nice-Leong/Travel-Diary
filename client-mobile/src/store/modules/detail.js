@@ -1,37 +1,51 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getTravelNoteDetail } from '@/service/modules/detail';
+import { detailService } from '@/service/modules/detail';
 
-export const fetchTravelNoteDetail = createAsyncThunk(
-  'detail/fetchTravelNoteDetail',
-  async (id) => {
-    const res = await getTravelNoteDetail(id);
-    return res.data;
+const initialState = {
+  detail: null,
+  loading: false,
+  error: null
+};
+
+// 异步获取日记详情
+export const fetchDiaryDetail = createAsyncThunk(
+  'detail/fetchDiaryDetail',
+  async (id, thunkAPI) => {
+    try {
+      const data = await detailService.getDiaryDetail(id);
+      return data;
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message || '加载失败');
+    }
   }
 );
 
 const detailSlice = createSlice({
   name: 'detail',
-  initialState: {
-    detail: null,
-    loading: false,
-    error: null,
+  initialState,
+  reducers: {
+    clearDiaryDetail(state) {
+      state.detail = null;
+      state.error = null;
+    }
   },
-  reducers: {},
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(fetchTravelNoteDetail.pending, (state) => {
+      .addCase(fetchDiaryDetail.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchTravelNoteDetail.fulfilled, (state, action) => {
+      .addCase(fetchDiaryDetail.fulfilled, (state, action) => {
         state.loading = false;
         state.detail = action.payload;
       })
-      .addCase(fetchTravelNoteDetail.rejected, (state, action) => {
+      .addCase(fetchDiaryDetail.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       });
   }
 });
+
+export const { clearDiaryDetail } = detailSlice.actions;
 
 export default detailSlice.reducer;

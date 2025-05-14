@@ -6,15 +6,11 @@ import { ConfigProvider } from 'antd-mobile';
 import zhCN from 'antd-mobile/es/locales/zh-CN';
 import router from './router';
 import store from './store';
-import 'antd-mobile/es/global';
 
+import 'antd-mobile/es/global';
 import 'normalize.css';
 import '@/assets/css/index.css';
 
-import { initMockData } from './mock/travelNotes';
-
-// 初始化模拟数据
-initMockData();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <Provider store={store}>
@@ -23,3 +19,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ConfigProvider>
   </Provider>
 );
+
+

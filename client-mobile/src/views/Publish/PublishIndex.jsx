@@ -4,8 +4,11 @@ import { Form, Input, TextArea, Button, Toast, ImageUploader } from 'antd-mobile
 import styled from 'styled-components';
 import { PlusOutlined } from '@ant-design/icons';
 import { LeftOutline } from 'antd-mobile-icons';
-import { addTravelNote } from '@/service/modules/publish'; 
-import { mockData } from '@/mock/travelNotes'; // 或从store获取
+import { useDispatch, useSelector } from 'react-redux';
+import { publishDiary, resetPublishState } from '@/store/modules/publish';
+import { fetchDiaryDetail, clearDiaryDetail } from '@/store/modules/detail';
+import { updateDiary } from '@/store/modules/mydiary';
+import imageCompression from 'browser-image-compression'; // 引入图片压缩库
 
 const PublishContainer = styled.div`
   padding: 16px;
@@ -32,39 +35,77 @@ const UploadBox = styled.div`
 
 const Publish = () => {
   const [form] = Form.useForm();
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // 存储压缩后的图片
   const [video, setVideo] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
+  const userInfo = useSelector((state) => state.user.userInfo);
   const [searchParams] = useSearchParams();
-  const id = searchParams.get('id');
-  const navigate = useNavigate();
   const from = searchParams.get('from');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editDiaryId, setEditDiaryId] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  const { detail } = useSelector(state => state.detail);
+
+  // 获取详情数据（编辑模式）
   useEffect(() => {
-    if (id) {
-      const note = mockData.find(item => String(item.id) === String(id));
-      if (note) {
-        form.setFieldsValue({
-          title: note.title || '',
-          content: note.content || '',
-          location: note.location || '',
-          departureTime: note.departureTime || '',
-          days: note.days || '',
-          cost: note.cost || '',
-          partner: note.partner || '',
-        });
-        setImages(note.images ? note.images.map(url => ({ url })) : []);
-        setVideo(note.video ? [{ url: note.video }] : []);
-      }
+    const editId = searchParams.get('id');
+    if (editId) {
+      setIsEditMode(true);
+      setEditDiaryId(editId);
+      // 获取游记详情
+      dispatch(fetchDiaryDetail(editId));
     }
-  }, [id, form]);
+  }, [searchParams, dispatch]);
 
-  // 图片上传处理
+  // 设置表单值（从 detail 中）
+  useEffect(() => {
+    if (detail && isEditMode) {
+      form.setFieldsValue({
+        title: detail.title || '',
+        content: detail.content || '',
+        location: detail.location || '',
+        departure_time: detail.departure_time || '',
+        days: detail.days || '',
+        cost: detail.cost || '',
+        partner: detail.partner || '',
+      });
+      setImages(detail.images ? detail.images.map(url => ({ url })) : []);
+      setVideo(detail.video ? [{ url: detail.video }] : []);
+    }
+  }, [detail, form]);
+
+  // 页面卸载时清除 detail 和发布状态
+  useEffect(() => {
+    return () => {
+      dispatch(clearDiaryDetail());
+      dispatch(resetPublishState());
+    };
+  }, [dispatch]);
+
+  // 图片压缩处理
   const handleImageUpload = async (file) => {
-    // 这里直接用base64模拟，实际可上传到服务器
+    try {
+      const options = {
+        maxSizeMB: 1, // 最大文件大小为 1MB
+        maxWidthOrHeight: 1024, // 最大宽度或高度为 1024px
+        useWebWorker: true, // 使用 Web Worker 进行压缩
+      };
+      const compressedFile = await imageCompression(file, options); // 压缩图片
+      const compressedFileUrl = await getFileUrl(compressedFile); // 获取压缩后文件的 URL
+      return { url: compressedFileUrl };
+    } catch (error) {
+      console.error('图片压缩失败:', error);
+      return { url: URL.createObjectURL(file) }; // 如果压缩失败，使用原始文件
+    }
+  };
+
+  // 将文件转换为 URL
+  const getFileUrl = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve({ url: reader.result });
+      reader.onload = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -81,33 +122,39 @@ const Publish = () => {
   };
 
   // 发布按钮点击
-  const handlePublish = async () => {
+  const handlePublish = async (values) => {
     try {
-      // 1. 校验表单项
-      const values = await form.validateFields();
-      // 2. 校验图片
-      if (!images.length) {
-        Toast.show({ content: '请上传至少一张图片', icon: 'fail' });
-        return;
+      if (isEditMode) {
+        const updateData = {
+          title: values.title,
+          content: values.content,
+          location: values.location,
+          departure_time: values.departure_time,
+          days: values.days,
+          cost: values.cost,
+          partner: values.partner,
+          images: images.map(img => img.url),
+          video: video.length > 0 ? video[0].url : ''
+        };
+        // 更新游记
+        const result = await dispatch(updateDiary({
+          id: editDiaryId,
+          data: updateData
+        })).unwrap();
+        console.log('更新成功:', result);
+        Toast.show({ content: '更新成功', icon: 'success' });
+      } else {
+        // 发布新游记
+        await dispatch(publishDiary(values)).unwrap();
+        Toast.show({ content: '发布成功', icon: 'success' });
       }
-      setLoading(true);
-      // 3. 通过所有校验，执行发布
-      await addTravelNote({
-        ...values,
-        images: images.map(i => i.url),
-        video: video[0]?.url || '',
-        createTime: new Date().toISOString(),
-      });
-      Toast.show({ content: '发布成功', icon: 'success' });
-      navigate('/my-diary', { replace: true });
+      // 返回我的游记页面
+      console.log('跳转前 token:', localStorage.getItem('token'))
+      console.log('跳转前 userInfo:', userInfo)
+
+      navigate('/mydiary');
     } catch (err) {
-      // 只要有一项校验不通过，都会进入这里
-      if (err && err.errorFields && err.errorFields.length > 0) {
-        Toast.show({ content: err.errorFields[0].errors[0], icon: 'fail' });
-      }
-      // 图片校验不通过时已在上面 return 并 toast
-    } finally {
-      setLoading(false);
+      Toast.show({ content: err.message || '操作失败', icon: 'fail' });
     }
   };
 
@@ -124,7 +171,7 @@ const Publish = () => {
             display: 'flex',
             alignItems: 'center',
             padding: '16px 0 12px 16px',
-            marginBottom: 12, // 与下方内容间隙
+            marginBottom: 12,
             borderBottom: '1px solid #f0f0f0'
           }}
         >
@@ -147,55 +194,33 @@ const Publish = () => {
         <Form
           form={form}
           layout="vertical"
+          onFinish={handlePublish}
           footer={
-            <Button block color="primary" loading={loading} onClick={handlePublish}>
-              发布
+            <Button block color="primary" loading={loading} type="submit" >
+             {isEditMode ? '更新' : '发布'}
             </Button>
           }
         >
-          <Form.Item
-            name="title"
-            label="标题"
-            rules={[{ required: true, message: '请输入标题' }]}
-          >
+          <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
             <Input placeholder="请输入游记标题" />
           </Form.Item>
-          <Form.Item
-            name="content"
-            label="内容"
-            rules={[{ required: true, message: '请输入内容' }]}
-          >
+          <Form.Item name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]}>
             <TextArea placeholder="请输入游记内容" rows={6} />
           </Form.Item>
-          <Form.Item
-            name="location"
-            label="地点（可选）"
-          >
-            <Input placeholder="请选择输入地点" />
+          <Form.Item name="location" label="地点（可选）">
+            <Input placeholder="请输入地点" />
           </Form.Item>
-          <Form.Item
-            name="departureTime"
-            label="出发时间（可选）"
-          >
-            <Input placeholder="请选择输入出发时间" />
+          <Form.Item name="departure_time" label="出发时间（可选）">
+            <Input placeholder="请输入出发时间" />
           </Form.Item>
-          <Form.Item
-            name="days"
-            label="行程天数（可选）"
-          >
-            <Input placeholder="请选择输入行程天数" />
+          <Form.Item name="days" label="行程天数（可选）">
+            <Input placeholder="请输入天数" />
           </Form.Item>
-          <Form.Item
-            name="cost"
-            label="人均花费（可选）"
-          >
-            <Input placeholder="请选择输入人均花费" />
+          <Form.Item name="cost" label="人均花费（可选）">
+            <Input placeholder="请输入花费" />
           </Form.Item>
-          <Form.Item
-            name="partner"
-            label="同行伙伴（可选）"
-          >
-            <Input placeholder="请选择输入同行伙伴" />
+          <Form.Item name="partner" label="同行伙伴（可选）">
+            <Input placeholder="请输入同行伙伴" />
           </Form.Item>
           <Form.Item label="图片（必填，最多9张）">
             <ImageUploader

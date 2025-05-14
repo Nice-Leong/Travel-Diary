@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toast, Dialog } from 'antd-mobile';
-import { useDispatch } from 'react-redux';
-import { fetchTravelNotes, deleteTravelNote } from '@/store/modules/mydiary';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDiary, deleteDiary } from '@/store/modules/mydiary';
 import styled from 'styled-components';
-import { mockData } from '@/mock/travelNotes';
 
 const PageContainer = styled.div`
   // background: #f5f6fa;
@@ -137,25 +136,31 @@ const ActionBtn = styled.button`
 const MyDiary = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // const { list } = useSelector(state => state.diary);
-  // const username = localStorage.getItem('username');
+  const { diary, loading } = useSelector((state) => state.mydiary); 
 
-  // 只展示当前用户的游记
-  const myList = mockData.filter(item => item.author?.nickname === 'testuser');
-  // console.log('myList', myList);
+  const user_id = localStorage.getItem('id'); 
+  
+
 
   useEffect(() => {
-    dispatch(fetchTravelNotes());
-  }, [dispatch]);
+    console.log('当前 user_id:', user_id, typeof user_id);
+    if (user_id) {
+      dispatch(fetchDiary({ user_id }));
+    }
+  }, [dispatch, user_id]);
+
+  useEffect(() => {
+    console.log('当前 diary:', diary);
+  }, [diary]);
 
   // 删除
   const handleDelete = async (id) => {
     Dialog.confirm({
       content: '确定要删除这条游记吗？',
       onConfirm: async () => {
-        await dispatch(deleteTravelNote(id));
+        await dispatch(deleteDiary(id)).unwrap();
         Toast.show({ content: '删除成功', icon: 'success' });
-      }
+      },
     });
   };
 
@@ -170,7 +175,9 @@ const MyDiary = () => {
         <span>我的游记</span>
         <AddBtn onClick={() => navigate('/publish')}>+ 新增</AddBtn>
       </Header>
-      {myList.map(item => (
+      {loading && <p>加载中...</p>}
+      {!loading && diary?.length === 0 && <p>暂无游记</p>}
+      {diary.map(item => (
         <Card key={item.id}>
           <CardRow>
             <Cover src={item.images?.[0]} />
@@ -192,8 +199,8 @@ const MyDiary = () => {
             {(item.status === 'pending' || item.status === 'rejected') && (
               <ActionBtn onClick={() => handleEdit(item.id)}>编辑</ActionBtn>
             )}
-            {item.status === 'rejected' && item.rejectReason && (
-              <Reason>原因：{item.rejectReason}</Reason>
+            {item.status === 'rejected' && item.reject_reason && (
+              <Reason>原因：{item.reject_reason}</Reason>
             )}
           </StatusRow>
         </Card>

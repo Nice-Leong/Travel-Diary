@@ -1,14 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
-import travelReducer from './modules/travel';
+import userReducer from './modules/user';
 import detailReducer from './modules/detail';
 import diaryReducer from './modules/diary';
 import mydiaryReducer from './modules/mydiary';
+import profileReducer from './modules/profile';
 const store = configureStore({
   reducer: {
-    travel: travelReducer,
+    user: userReducer,
     detail: detailReducer,
     diary: diaryReducer,
     mydiary: mydiaryReducer,
+    profile: profileReducer,
   },
 });
 

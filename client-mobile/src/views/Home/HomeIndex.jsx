@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { SearchBar, InfiniteScroll, Image, Avatar, Toast, DotLoading, ErrorBlock, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
-import { fetchTravelNotes, resetTravelList, setSearchKey } from '@/store/modules/travel';
+import { setSearchKey, resetDiaryList, fetchDiaryList } from '@/store/modules/diary'; 
 
 const HomeContainer = styled.div`
   // background-color: #f5f5f5;
@@ -118,81 +118,67 @@ const NoMoreData = styled.div`
 `;
 
 const Home = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { 
-    travelList, 
-    loading, 
-    hasMore, 
-    currentPage,
+  const navigate = useNavigate();
+  const {
+    diaryList,
     searchKey,
-    error 
-  } = useSelector(state => state.travel);
+    loading,
+    hasMore,
+    currentPage,
+    pageSize,
+    error
+  } = useSelector(state => state.diary);
 
   // 判断是否触底
   const isReachBottom = useCallback(() => {
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
-    return scrollHeight - scrollTop - clientHeight < 50;
+    return scrollHeight - scrollTop - clientHeight < 100;
   }, []);
 
   // 首次加载数据
-  const initLoadData = useCallback(async () => {
+  const initLoad = useCallback(async () => {
+    dispatch(resetDiaryList());
     try {
-      await dispatch(fetchTravelNotes({
-        page: 1,
-        pageSize: 10,
-        searchKey
-      })).unwrap();
-    } catch (error) {
-      Toast.show({
-        content: error?.message || '加载失败',
-        icon: 'fail',
-      });
+      await dispatch(fetchDiaryList({ page: 1, pageSize })).unwrap();
+    } catch (err) {
+      Toast.show({ content: err.message || '加载失败', icon: 'fail' });
     }
-  }, [dispatch, searchKey]);
+  }, [dispatch, pageSize]);
 
   // 加载更多数据
   const loadMore = useCallback(async () => {
     if (!isReachBottom() || loading || !hasMore) return;
-    
     try {
-      await dispatch(fetchTravelNotes({
-        page: currentPage,
-        pageSize: 10,
-        searchKey
-      })).unwrap();
-    } catch (error) {
-      Toast.show({
-        content: error?.message || '加载失败',
-        icon: 'fail',
-      });
+      await dispatch(fetchDiaryList({ page: currentPage, pageSize })).unwrap();
+    } catch (err) {
+      Toast.show({ content: err.message || '加载失败', icon: 'fail' });
     }
-  }, [currentPage, searchKey, dispatch, loading, hasMore, isReachBottom]);
+  }, [dispatch, currentPage, pageSize, loading, hasMore, isReachBottom]);
 
-  // 监听滚动事件
+  useEffect(() => {
+    initLoad();
+  }, [initLoad]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (isReachBottom()) {
         loadMore();
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore, isReachBottom]);
 
-  // 首次加载
-  useEffect(() => {
-    initLoadData();
-  }, [initLoadData]);
+  
 
   // 处理搜索
   const handleSearch = (value) => {
     dispatch(setSearchKey(value));
-    dispatch(resetTravelList());
-    initLoadData();
+    dispatch(resetDiaryList());
+    dispatch(fetchDiaryList({ page: 1, pageSize, searchKey: value }));
   };
 
   const handleCardClick = (id) => {
@@ -210,14 +196,12 @@ const Home = () => {
       </SearchContainer>
 
       {error ? (
-        <ErrorWrapper>
-          <ErrorBlock
-            status='default'
-            title='加载失败'
-            description={error}
-            onRetry={initLoadData}
-          />
-        </ErrorWrapper>
+        <ErrorBlock
+        status='default'
+        title='加载失败'
+        description={error}
+        onRetry={initLoad}
+      />
       ) : (
         <>
           {loading && currentPage > 1 && (
@@ -228,13 +212,13 @@ const Home = () => {
           )}
 
           <WaterfallContainer>
-            {travelList.map((note, index) => (
+            {diaryList.map((diary, index) => (
               <TravelCard 
-                key={`${note.id}-${index}`} 
-                onClick={() => handleCardClick(note.id)}
+                key={`${diary.id}-${index}`} 
+                onClick={() => handleCardClick(diary.id)}
               >
                 <Image
-                  src={note.images[0]}
+                  src={diary.images[0]}
                   className="travel-image"
                   fit="cover"
                   lazy
@@ -253,19 +237,19 @@ const Home = () => {
                     </div>
                   }
                 />
-                <div className="travel-title">{note.title}</div>
+                <div className="travel-title">{diary.title}</div>
                 <div className="user-info">
                   <Avatar
-                    src={note.author.avatar}
+                    src={diary.avatar}
                     style={{ '--size': '28px' }}
                   />
-                  <span className="nickname">{note.author.nickname}</span>
+                  <span className="nickname">{diary.nickname}</span>
                 </div>
               </TravelCard>
             ))}
           </WaterfallContainer>
 
-          {!hasMore && travelList.length > 0 && (
+          {!hasMore && diaryList.length > 0 && (
             <NoMoreData>
               {searchKey ? '没有更多搜索结果了' : '已经到底了'}
             </NoMoreData>
