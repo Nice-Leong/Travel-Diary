@@ -6,42 +6,18 @@ const Diary = {
     return rows;
   },
 
-  async updateDiary(id, title, content, location, departure_time, days, cost, partner, images, video, user_id) {
+  async updateDiary(id, title, content, location, departure_time, days, cost, partner, images, video) {
   
     const result = await db.query(
       `UPDATE diary 
        SET title = ?, content = ?, location = ?, departure_time = ?, days = ?, cost = ?, partner = ?, images = ?, video = ? 
-       WHERE id = ? AND user_id = ?`,
-      [
-        title,
-        content,
-        location,
-        departure_time,
-        days,
-        cost,
-        partner,
-        JSON.stringify(images), // 把数组转成 JSON 字符串存储
-        video,
-        id,
-        user_id
-      ]
+       WHERE id = ?`,
+      [ title, content, location, departure_time, days, cost, partner, JSON.stringify(images), video, id ]
     );
   
     if (result.affectedRows === 0) return null;
   
-    return {
-      id,
-      title,
-      content,
-      location,
-      departure_time,
-      days,
-      cost,
-      partner,
-      images,
-      video,
-      user_id
-    };
+    return { id, title, content, location, departure_time, days, cost, partner, images, video };
   },
   
 

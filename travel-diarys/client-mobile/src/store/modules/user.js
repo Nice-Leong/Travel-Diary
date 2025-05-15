@@ -1,8 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
+import defaultAvatar from '@/assets/img/default-avatar.png';
 
 const initialState = {
   token: localStorage.getItem('token') || '',
-  userInfo: JSON.parse(localStorage.getItem('userInfo') || '{}')
+  userInfo: JSON.parse(localStorage.getItem('userInfo')) || {
+    id: null,
+    nickname: '游客',
+    avatar: defaultAvatar,
+    bio: '请登录查看完整信息'
+  }
 };
 
 const userSlice = createSlice({

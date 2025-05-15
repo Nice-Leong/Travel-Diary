@@ -14,19 +14,8 @@ const getMyDiary = async (req, res) => {
 
 // 更新游记
 const updateDiary = async (req, res) => {
-  console.log('进入 updateDiary，id:', req.params.id);
   const { id } = req.params;
-  const { 
-    title, 
-    content, 
-    location,
-    departure_time,
-    days,
-    cost,
-    partner,
-    images, 
-    video 
-  } = req.body;
+  const { title, content, location, departure_time, days, cost, partner, images, video } = req.body;
   
   try {
 
@@ -40,7 +29,7 @@ const updateDiary = async (req, res) => {
       return res.status(404).json({ message: '更新失败或未找到记录' });
     }
 
-    res.json({ message: '更新成功', data: result });
+    res.json({ code: 0, message: '更新成功', data: result });
   } catch (error) {
     console.error('更新游记失败:', error);
     res.status(500).json({ 

@@ -182,6 +182,7 @@ const DetailIndex = () => {
 
   const carouselHeight = 220; 
 
+
   useEffect(() => {
     dispatch(fetchDiaryDetail(id));
   }, [id, dispatch]);
@@ -196,7 +197,8 @@ const DetailIndex = () => {
     ? [ { type: 'video', url: detail.video }, ...detail.images.map(url => ({ type: 'image', url })) ]
     : detail.images.map(url => ({ type: 'image', url }));
 
-  const imageList = mediaList.filter(m => m.type === 'image').map(m => m.url);
+  const imageList = mediaList.filter(m => m.type === 'image').map(m => m.url.trim());
+  
 
   const handleShare = () => {
     if (navigator.share) {
@@ -210,9 +212,9 @@ const DetailIndex = () => {
     }
   };
 
+
   return (
     <Container>
-      {/* 顶部作者栏和返回按钮 */}
       <Header>
         <AuthorRow>
           <BackBtn onClick={() => navigate('/')}>
@@ -229,13 +231,22 @@ const DetailIndex = () => {
         </RightActions>
       </Header>
 
-      {/* 轮播图 */}
       <SwiperWrapper>
         <Swiper
           loop
           stuckAtBoundary
           autoplay={2000}
-          onIndexChange={i => setViewerIndex(i)}
+          onIndexChange={i => {
+            if (!detail.video) {
+              setViewerIndex(i);
+            } else {
+              if (i === 0) {
+                setViewerIndex(0);
+              } else {
+                setViewerIndex(i - 1);
+              }
+            }
+          }}
         >
           {mediaList.map((item, idx) =>
             <Swiper.Item key={idx}>
@@ -277,14 +288,14 @@ const DetailIndex = () => {
                   style={{ width: '100%', height: 220, borderRadius: 8, objectFit: 'cover', cursor: 'pointer' }}
                   onClick={() => {
                     setShowViewer(true);
-                    setViewerIndex(imageList.indexOf(item.url));
+                    const idx = imageList.indexOf(item.url);
+                    setViewerIndex(idx >= 0 ? idx : 0);
                   }}
                 />
               )}
             </Swiper.Item>
           )}
         </Swiper>
-        {/* 全屏蒙层视频 */}
         {showVideo && (
           <div
             style={{
@@ -317,26 +328,22 @@ const DetailIndex = () => {
             />
           </div>
         )}
-        {/* 图片预览大图 */}
-        <ImageViewer
+        <ImageViewer.Multi
           images={imageList}
           visible={showViewer}
-          defaultIndex={viewerIndex}
+          defaultIndex={viewerIndex >= 0 ? viewerIndex : 0}
           onClose={() => setShowViewer(false)}
-        />
+/>
       </SwiperWrapper>
 
-      {/* 顶部标签 */}
       <LocationBar>
         <LocationIcon />
         <span>{detail.location}</span>
         <ArrowIcon />
       </LocationBar>
 
-      {/* 标题 */}
       <Title>{detail.title}</Title>
 
-      {/* 信息卡片 */}
       <InfoCard>
         <InfoItem>
           <InfoNum>2月</InfoNum>
@@ -356,7 +363,6 @@ const DetailIndex = () => {
         </InfoItem>
       </InfoCard>
 
-      {/* 正文内容 */}
       <Content>{detail.content || '这里是游记正文内容...'}</Content>
 
       

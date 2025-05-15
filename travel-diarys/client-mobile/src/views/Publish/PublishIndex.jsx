@@ -54,7 +54,6 @@ const Publish = () => {
     if (editId) {
       setIsEditMode(true);
       setEditDiaryId(editId);
-      // 获取游记详情
       dispatch(fetchDiaryDetail(editId));
     }
   }, [searchParams, dispatch]);
@@ -74,7 +73,7 @@ const Publish = () => {
       setImages(detail.images ? detail.images.map(url => ({ url })) : []);
       setVideo(detail.video ? [{ url: detail.video }] : []);
     }
-  }, [detail, form]);
+  }, [detail, form, isEditMode]);
 
   // 页面卸载时清除 detail 和发布状态
   useEffect(() => {
@@ -124,6 +123,10 @@ const Publish = () => {
   // 发布按钮点击
   const handlePublish = async (values) => {
     try {
+      if (!userInfo || !userInfo.id) {
+        Toast.show({ content: '请先登录', icon: 'fail' });
+        return;
+      }
       if (isEditMode) {
         const updateData = {
           title: values.title,
@@ -134,23 +137,27 @@ const Publish = () => {
           cost: values.cost,
           partner: values.partner,
           images: images.map(img => img.url),
-          video: video.length > 0 ? video[0].url : ''
+          video: video.length > 0 ? video[0].url : '',
+          user_id: userInfo.id
         };
         // 更新游记
-        const result = await dispatch(updateDiary({
+        await dispatch(updateDiary({
           id: editDiaryId,
           data: updateData
         })).unwrap();
-        console.log('更新成功:', result);
         Toast.show({ content: '更新成功', icon: 'success' });
       } else {
         // 发布新游记
-        await dispatch(publishDiary(values)).unwrap();
+        const publishData = {
+          ...values,
+          user_id: userInfo.id,
+          images: images.map(img => img.url),
+          video: video.length > 0 ? video[0].url : ''
+        };
+
+        await dispatch(publishDiary(publishData)).unwrap();
         Toast.show({ content: '发布成功', icon: 'success' });
       }
-      // 返回我的游记页面
-      console.log('跳转前 token:', localStorage.getItem('token'))
-      console.log('跳转前 userInfo:', userInfo)
 
       navigate('/mydiary');
     } catch (err) {

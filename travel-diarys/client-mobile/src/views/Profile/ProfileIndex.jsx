@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { Dialog, Toast, Input, TextArea, Button, ImageUploader } from 'antd-mobile';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom'
 import { fetchUserInfo, updateUserInfo, changePassword, logout } from '@/store/modules/profile';
 import defaultAvatar from '@/assets/img/default-avatar.png';
 
@@ -121,10 +122,39 @@ const AvatarUploader = styled.div`
   }
 `;
 
+const PageContainer = styled.div`
+  height: 100vh;
+  padding: 10px;
+  background-color: #f5f5f5;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: bold;
+  padding: 48px;
+  color: #333;
+`;
+
+const DefaultProfile = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+`;
+
+const LoginBtn = styled(Button)`
+  margin-top: 20px;
+  width: 60%;
+`;
+
 const Profile = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate()
   const user = useSelector(state => state.profile.userInfo);
   const { loading, error } = useSelector(state => state.profile);
+  const token = localStorage.getItem('token');
   const id = localStorage.getItem('id');
 
   useEffect(() => {
@@ -135,19 +165,30 @@ const Profile = () => {
         } catch (error) {
           console.error(error);
         }
-      } else {
-        console.log('[DEBUG] Profile组件 - 没有用户ID，无法获取信息');
-      }
+      } 
     };
 
     fetchData();
   }, [dispatch, id]);
 
-  useEffect(() => {
-    console.log('[DEBUG] Profile组件 - user数据发生变化:', user);
-  }, [user]);
+  // 如果未登录，显示默认信息
+  if (!token) {
+    return (
+      <PageContainer>
+        <Header>
+          <span>未登录</span>
+        </Header>
+        <DefaultProfile>
+          <Avatar src={defaultAvatar} />
+          <Nickname>旅客</Nickname>
+          <LoginBtn onClick={() => navigate('/login', { state: { from: '/profile' } })}>
+            登录/注册
+          </LoginBtn>
+        </DefaultProfile>
+      </PageContainer>
+    );
+  }
 
-  
 
   const handleImageUpload = async (file) => {
     try {

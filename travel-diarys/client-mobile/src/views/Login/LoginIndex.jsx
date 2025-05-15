@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Form, Input, Button, Toast, Tabs, ImageUploader } from 'antd-mobile';
 import styled from 'styled-components';
 import defaultAvatar from '@/assets/img/default-avatar.png';
@@ -85,6 +85,8 @@ const AvatarUploader = styled.div`
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const from = location.state?.from || '/';
   const [loginForm] = Form.useForm();
   const [registerForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('login');
@@ -130,7 +132,7 @@ const Login = () => {
         icon: 'success',
       });
 
-      navigate('/', { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       Toast.show({
         content: err.message || '登录失败！',
@@ -154,7 +156,7 @@ const Login = () => {
       }
 
       // 调用 API 进行注册
-      const response = await userService.register(values);  // 使用 service 层进行 API 请求
+      const response = await userService.register(values);  
 
       // 更新 Redux store
       dispatch(registerAction({
@@ -178,8 +180,10 @@ const Login = () => {
       setActiveTab('login');
       
     } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || '注册失败！';
+    
       Toast.show({
-        content: err.message || '注册失败！',
+        content: errorMsg,
         icon: 'fail',
       });
     } finally {

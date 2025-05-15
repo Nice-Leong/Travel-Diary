@@ -4,6 +4,7 @@ import detailReducer from './modules/detail';
 import diaryReducer from './modules/diary';
 import mydiaryReducer from './modules/mydiary';
 import profileReducer from './modules/profile';
+import publishReducer from './modules/publish';
 const store = configureStore({
   reducer: {
     user: userReducer,
@@ -11,6 +12,7 @@ const store = configureStore({
     diary: diaryReducer,
     mydiary: mydiaryReducer,
     profile: profileReducer,
+    publish: publishReducer,
   },
 });
 

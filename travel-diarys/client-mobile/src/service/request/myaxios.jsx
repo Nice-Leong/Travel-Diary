@@ -23,7 +23,6 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   response => {
-    // 如果响应成功，直接返回数据
     return response
   },
   error => {

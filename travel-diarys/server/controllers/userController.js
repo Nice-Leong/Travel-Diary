@@ -4,9 +4,9 @@ const bcrypt = require('bcryptjs')
 
 exports.register = async (req, res) => {
   try {
-    const { username, password } = req.body
-    if (!username || !password) {
-      return res.status(400).json({ message: '用户名和密码不能为空' })
+    const { username, password, nickname } = req.body; 
+    if (!username || !password || !nickname) {
+      return res.status(400).json({ message: '用户名、密码和昵称不能为空' });
     }
 
     const user = await userModel.findByUsername(username)
@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
 
     // 使用 bcrypt 加密密码
     const hash = await bcrypt.hash(password, 10)
-    await userModel.createUser(username, hash)
+    await userModel.createUser(username, hash, nickname)
     res.json({ message: '注册成功' })
   } catch (error) {
     res.status(500).json({ message: '服务器错误' })
@@ -44,7 +44,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: '用户名或密码错误' })
     }
 
-    const token = jwt.sign({ userId: user.id }, '你的JWT密钥', { expiresIn: '24h' })
+    const token = jwt.sign({ userId: user.id }, '你的JWT密钥', { expiresIn: '0.5h' })
 
     res.json({
       token,

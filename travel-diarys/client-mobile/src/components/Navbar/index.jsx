@@ -27,6 +27,7 @@ const StyledTabBar = styled(TabBar)`
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const token = localStorage.getItem('token');
   
   
   const tabs = [
@@ -41,7 +42,7 @@ const Navbar = () => {
       icon: <EditOutlined />,
     },
     {
-      key: '/my-diary',
+      key: '/mydiary',
       title: '我的游记',
       icon: <BookOutlined />,
     },
@@ -53,6 +54,13 @@ const Navbar = () => {
   ];
 
   const handleTabChange = (key) => {
+    const authRequiredPaths = ['/publish', '/mydiary'];
+    
+    if (authRequiredPaths.includes(key) && !token) {
+      navigate('/login', { state: { from: key } });
+      return;
+    }
+
     navigate(key);
   };
 

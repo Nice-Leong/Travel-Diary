@@ -1,6 +1,5 @@
 const mysql = require('mysql2/promise')
 
-// 创建连接池
 const db = mysql.createPool({
   host: '127.0.0.1',       
   user: 'root',            

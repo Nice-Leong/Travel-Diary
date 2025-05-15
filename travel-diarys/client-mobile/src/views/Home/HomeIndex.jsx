@@ -49,12 +49,15 @@ const LoadingWrapper = styled.div`
 `;
 
 const WaterfallContainer = styled.div`
-  column-count: 2;
-  column-gap: 8px;
+  display: flex;
+  flex-wrap: wrap;    
+  gap: 12px;          
   margin-top: 12px;
 `;
 
 const TravelCard = styled.div`
+  flex: 0 0 calc(50% - 6px);
+  box-sizing: border-box;
   break-inside: avoid;
   background: white;
   border-radius: 12px;

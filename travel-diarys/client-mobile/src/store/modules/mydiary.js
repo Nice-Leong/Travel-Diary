@@ -39,12 +39,13 @@ export const updateDiary = createAsyncThunk(
   async ({ id, data }, thunkAPI) => {
     try {
       const response = await mydiaryService.updateDiary(id, data);
-      return response.data.data;
+      return response;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.message || '更新失败');
+      return thunkAPI.rejectWithValue(err.message || '请求异常');
     }
   }
 );
+
 
 const mydiarySlice = createSlice({
   name: 'mydiary',

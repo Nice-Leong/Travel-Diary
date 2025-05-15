@@ -11,7 +11,7 @@ exports.findDiaryById = async (id) => {
     if (rows && rows.length > 0) {
       return rows[0];
     } else {
-      return null;  // 明确返回 null
+      return null;  
     }
   };
   

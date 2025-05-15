@@ -7,7 +7,7 @@ exports.findAllDiaries = async (page = 1, pageSize = 10, searchKey = '') => {
       SELECT diary.*, users.nickname, users.avatar
       FROM diary
       LEFT JOIN users ON diary.user_id = users.id
-      WHERE 1=1
+      WHERE diary.status = 'approved'
     `
     const params = []
 

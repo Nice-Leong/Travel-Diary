@@ -143,15 +143,11 @@ const MyDiary = () => {
 
 
   useEffect(() => {
-    console.log('当前 user_id:', user_id, typeof user_id);
     if (user_id) {
       dispatch(fetchDiary({ user_id }));
     }
   }, [dispatch, user_id]);
 
-  useEffect(() => {
-    console.log('当前 diary:', diary);
-  }, [diary]);
 
   // 删除
   const handleDelete = async (id) => {

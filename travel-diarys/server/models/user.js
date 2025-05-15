@@ -12,11 +12,14 @@ exports.findByUsername = async (username) => {
   }
 }
 
-exports.createUser = async (username, password) => {
+exports.createUser = async (username, password, nickname) => {
   try {
-    const result = await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, password])
-    return result[0].insertId // 返回新插入用户的 ID
+    const result = await db.query(
+      'INSERT INTO users (username, password, nickname) VALUES (?, ?, ?)',
+      [username, password, nickname]
+    );
+    return result[0].insertId;
   } catch (error) {
-    throw error
+    throw error;
   }
-}
+};

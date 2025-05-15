@@ -38,19 +38,23 @@ export const mydiaryService = {
   // 编辑游记
   async updateDiary(id, data) {
     try {
-      const updateData = {
-        title: data.title,
-        content: data.content,
-        location: data.location,
-        departure_time: data.departure_time,
-        days: data.days,
-        cost: data.cost,
-        partner: data.partner,
-        images: Array.isArray(data.images) ? data.images : [],
-        video: data.video || ''
-      };
-      const res = await request.put(`/api/mydiary/${id}`, updateData);
-      return res.data.data;
+      // const updateData = {
+      //   title: data.title,
+      //   content: data.content,
+      //   location: data.location,
+      //   departure_time: data.departure_time,
+      //   days: data.days,
+      //   cost: data.cost,
+      //   partner: data.partner,
+      //   images: Array.isArray(data.images) ? data.images : [],
+      //   video: data.video || ''
+      // };
+      const res = await request.put(`/api/mydiary/${id}`, data);
+      if (res.data && res.data.code === 0) {
+        return res.data.data || data;
+      } else {
+        throw new Error(res.data.message || '更新失败');
+      }
     } catch (error) {
       console.error('更新游记失败:', error);
       throw error;
