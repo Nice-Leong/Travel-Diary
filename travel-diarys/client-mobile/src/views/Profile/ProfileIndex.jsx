@@ -85,40 +85,30 @@ const AvatarUploader = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+    
+    &:hover::after {
+      content: '点击更换头像';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+    }
   }
 
   .default-avatar {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-  }
-
-  .adm-image-uploader {
-    --cell-size: 80px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 80px;
-    height: 80px;
-  }
-
-  .adm-image-uploader-upload-button {
-    width: 80px !important;
-    height: 80px !important;
-    background: transparent;
-    border-radius: 50%;
-    padding: 0;
-    margin: 0;
-  }
-
-  .adm-image-uploader-cell {
-    width: 80px;
-    height: 80px;
-    padding: 0;
-    margin: 0;
-    border-radius: 50%;
   }
 `;
 
@@ -213,21 +203,54 @@ const Profile = () => {
     let newBio = user.bio;
     let newAvatar = user.avatar;
 
+    // 创建一个隐藏的文件输入元素
+    const fileInputRef = React.createRef();
+
     await Dialog.confirm({
       title: '编辑个人信息',
       content: (
         <div>
           <AvatarUploader>
-            <div className="avatar-wrapper">
-              <img src={newAvatar || defaultAvatar} alt="当前头像" className="default-avatar" />
-              <ImageUploader
-                value={newAvatar ? [{ url: newAvatar }] : []}
-                onChange={files => {
-                  newAvatar = files.length > 0 ? files[0].url : defaultAvatar;
+            <div 
+              className="avatar-wrapper"
+              onClick={() => {
+                // 点击头像时触发文件选择
+                fileInputRef.current?.click();
+              }}
+            >
+              <img 
+                src={newAvatar || defaultAvatar} 
+                alt="当前头像" 
+                className="default-avatar"
+                onError={(e) => {
+                  e.target.src = defaultAvatar;
                 }}
-                upload={handleImageUpload}
-                showUpload={true}
-                maxCount={1}
+              />
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      const result = await handleImageUpload(file);
+                      if (result) {
+                        newAvatar = result.url;
+                        // 强制更新预览图
+                        const img = document.querySelector('.default-avatar');
+                        if (img) {
+                          img.src = result.url;
+                        }
+                      }
+                    } catch (err) {
+                      Toast.show({ content: err.message || '图片上传失败', icon: 'fail' });
+                    }
+                  }
+                  // 清空文件输入，允许重复选择同一文件
+                  e.target.value = '';
+                }}
               />
             </div>
           </AvatarUploader>
@@ -238,7 +261,7 @@ const Profile = () => {
             style={{ marginBottom: 12 }}
           />
           <TextArea
-            defaultValue={user.bio}
+            defaultValue={user.bio || ''}
             placeholder="请输入个人简介"
             rows={3}
             onChange={val => (newBio = val)}
@@ -247,7 +270,30 @@ const Profile = () => {
       ),
       onConfirm: async () => {
         try {
-          await dispatch(updateUserInfo({ id: user.id, data: { nickname: newNickname, bio: newBio, avatar: newAvatar } }));
+          // 确保头像 URL 有效
+          if (!newAvatar || newAvatar === defaultAvatar) {
+            newAvatar = defaultAvatar;
+          }
+          
+          await dispatch(updateUserInfo({ 
+            id: user.id, 
+            data: { 
+              nickname: newNickname, 
+              bio: newBio, 
+              avatar: newAvatar 
+            } 
+          }));
+
+          // 更新本地存储的用户信息
+          const currentUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+          const updatedUserInfo = { 
+            ...currentUserInfo, 
+            nickname: newNickname,
+            bio: newBio,
+            avatar: newAvatar
+          };
+          localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+          
           Toast.show({ content: '修改成功', icon: 'success' });
         } catch (err) {
           Toast.show({ content: err.message || '修改失败', icon: 'fail' });

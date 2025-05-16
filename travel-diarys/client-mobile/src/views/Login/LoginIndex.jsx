@@ -4,7 +4,7 @@ import { Form, Input, Button, Toast, Tabs, ImageUploader } from 'antd-mobile';
 import styled from 'styled-components';
 import defaultAvatar from '@/assets/img/default-avatar.png';
 import { useDispatch } from 'react-redux';  
-import { login, register as registerAction } from '@/store/modules/user';  
+import { login  } from '@/store/modules/user';  
 import { userService } from '@/service/modules/user';  
 
 const LoginContainer = styled.div`
@@ -155,17 +155,22 @@ const Login = () => {
         return;
       }
 
+      const payload = {
+        ...values,
+        avatar: avatar || defaultAvatar
+      };
+
       // 调用 API 进行注册
-      const response = await userService.register(values);  
+      await userService.register(payload);  
 
       // 更新 Redux store
-      dispatch(registerAction({
-        token: response.token,
-        userInfo: response.userInfo,
-      }));
+      // dispatch(registerAction({
+      //   token: response.token,
+      //   userInfo: response.userInfo,
+      // }));
 
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('userInfo', JSON.stringify(response.userInfo));
+      // localStorage.setItem('token', response.token);
+      // localStorage.setItem('userInfo', JSON.stringify(response.userInfo));
 
       Toast.show({
         content: '注册成功！请登录',

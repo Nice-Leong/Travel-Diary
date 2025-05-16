@@ -1,13 +1,13 @@
 const db = require('../config/db');
 
-exports.createDiary = async ({ title, content, images, video, location, user_id }) => {
+exports.createDiary = async ({ title, content, images, video, location, departure_time, days, cost, partner, user_id }) => {
   try {
     const [result] = await db.query(
       `
-      INSERT INTO diary (title, content, images, video, location, user_id, create_time)
-      VALUES (?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO diary (title, content, images, video, location, departure_time, days, cost, partner, user_id, create_time)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `,
-      [title, content, JSON.stringify(images), video, location, user_id]
+      [title, content, JSON.stringify(images), video, location, departure_time, days, cost, partner, user_id]
     );
 
     return result.insertId;

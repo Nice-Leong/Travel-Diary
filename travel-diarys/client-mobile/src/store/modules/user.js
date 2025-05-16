@@ -1,16 +1,30 @@
 import { createSlice } from '@reduxjs/toolkit';
 import defaultAvatar from '@/assets/img/default-avatar.png';
 
-const initialState = {
-  token: localStorage.getItem('token') || '',
-  userInfo: JSON.parse(localStorage.getItem('userInfo')) || {
-    id: null,
-    nickname: '游客',
-    avatar: defaultAvatar,
-    bio: '请登录查看完整信息'
+const safeParseJSON = (key, defaultValue) => {
+  try {
+    const value = localStorage.getItem(key);
+    if (!value) return defaultValue;
+    return JSON.parse(value);
+  } catch (e) {
+    console.warn(`localStorage 解析 ${key} 出错，使用默认值`, e);
+    return defaultValue;
   }
 };
 
+// 默认用户信息
+const defaultUserInfo = {
+  id: null,
+  nickname: '游客',
+  avatar: defaultAvatar,
+  bio: '请登录查看完整信息'
+};
+
+// 初始化 state
+const initialState = {
+  token: localStorage.getItem('token') || '',
+  userInfo: safeParseJSON('userInfo', defaultUserInfo)
+};
 const userSlice = createSlice({
   name: 'user',
   initialState,

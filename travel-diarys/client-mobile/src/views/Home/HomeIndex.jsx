@@ -1,4 +1,3 @@
-// src/views/Home/HomeIndex.jsx
 import React, { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';

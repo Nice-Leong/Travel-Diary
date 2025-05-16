@@ -16,7 +16,7 @@ exports.findAllDiaries = async (page = 1, pageSize = 10, searchKey = '') => {
       params.push(`%${searchKey}%`, `%${searchKey}%`)
     }
 
-    query += ' ORDER BY diary.id ASC LIMIT ? OFFSET ?'
+    query += ' ORDER BY diary.id DESC LIMIT ? OFFSET ?'
     params.push(parseInt(pageSize), parseInt(offset))
 
     const [rows] = await db.query(query, params)

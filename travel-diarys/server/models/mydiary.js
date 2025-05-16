@@ -8,9 +8,9 @@ const Diary = {
 
   async updateDiary(id, title, content, location, departure_time, days, cost, partner, images, video) {
   
-    const result = await db.query(
+    const [result] = await db.query(
       `UPDATE diary 
-       SET title = ?, content = ?, location = ?, departure_time = ?, days = ?, cost = ?, partner = ?, images = ?, video = ? 
+       SET title = ?, content = ?, location = ?, departure_time = ?, days = ?, cost = ?, partner = ?, images = ?, video = ?, status = 'pending' 
        WHERE id = ?`,
       [ title, content, location, departure_time, days, cost, partner, JSON.stringify(images), video, id ]
     );

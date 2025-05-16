@@ -346,19 +346,19 @@ const DetailIndex = () => {
 
       <InfoCard>
         <InfoItem>
-          <InfoNum>2月</InfoNum>
+          <InfoNum>{detail.departure_time}</InfoNum>
           <InfoLabel>出发时间</InfoLabel>
         </InfoItem>
         <InfoItem>
-          <InfoNum>7天</InfoNum>
+          <InfoNum>{detail.days}</InfoNum>
           <InfoLabel>行程天数</InfoLabel>
         </InfoItem>
         <InfoItem>
-          <InfoNum>5.0千</InfoNum>
+          <InfoNum>{detail.cost}</InfoNum>
           <InfoLabel>人均花费</InfoLabel>
         </InfoItem>
         <InfoItem>
-          <InfoNum>夫妻</InfoNum>
+          <InfoNum>{detail.partner}</InfoNum>
           <InfoLabel>和谁出行</InfoLabel>
         </InfoItem>
       </InfoCard>
