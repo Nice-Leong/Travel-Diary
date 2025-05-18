@@ -7,7 +7,9 @@ const initialState = {
   error: null,
   currentPage: 1,
   hasMore: true,
-  pageSize: 10
+  pageSize: 10,
+  hasLoaded: false,
+  scrollY: 0,
 };
 
 // 异步获取日记列表（分页）
@@ -35,6 +37,9 @@ const diarySlice = createSlice({
     },
     setSearchKey: (state, action) => {
       state.searchKey = action.payload;
+    },
+    setScrollY: (state, action) => {
+      state.scrollY = action.payload;
     }
   },
   extraReducers: builder => {
@@ -45,6 +50,7 @@ const diarySlice = createSlice({
       })
       .addCase(fetchDiaryList.fulfilled, (state, action) => {
         state.loading = false;
+        state.hasLoaded = true;
         if (action.payload.page === 1) {
           state.diaryList = action.payload.data;
         } else {
@@ -62,5 +68,5 @@ const diarySlice = createSlice({
   }
 });
 
-export const { resetDiaryList, setSearchKey } = diarySlice.actions;
+export const { resetDiaryList, setSearchKey, setScrollY } = diarySlice.actions;
 export default diarySlice.reducer;

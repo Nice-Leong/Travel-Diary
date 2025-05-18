@@ -199,6 +199,9 @@ const DetailIndex = () => {
 
   const imageList = mediaList.filter(m => m.type === 'image').map(m => m.url.trim());
   
+  const handleBack = () => {
+    navigate(-1); 
+  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -217,7 +220,7 @@ const DetailIndex = () => {
     <Container>
       <Header>
         <AuthorRow>
-          <BackBtn onClick={() => navigate('/')}>
+          <BackBtn onClick={handleBack}>
             <LeftOutline style={{ fontSize: 18 }} />
           </BackBtn>
           <Avatar src={detail.avatar} />

@@ -7,7 +7,6 @@ import { fetchUserInfo, updateUserInfo, changePassword, logout } from '@/store/m
 import defaultAvatar from '@/assets/img/default-avatar.png';
 
 const ProfileContainer = styled.div`
-  
   height: 100vh;
   padding: 10px;
 `;

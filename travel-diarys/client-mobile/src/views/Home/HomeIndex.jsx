@@ -1,9 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { SearchBar, InfiniteScroll, Image, Avatar, Toast, DotLoading, ErrorBlock, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
-import { setSearchKey, resetDiaryList, fetchDiaryList } from '@/store/modules/diary'; 
+import { setSearchKey, resetDiaryList, fetchDiaryList, setScrollY } from '@/store/modules/diary'; 
 
 const HomeContainer = styled.div`
   // background-color: #f5f5f5;
@@ -122,6 +122,7 @@ const NoMoreData = styled.div`
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     diaryList,
     searchKey,
@@ -129,8 +130,13 @@ const Home = () => {
     hasMore,
     currentPage,
     pageSize,
-    error
+    error,
+    hasLoaded,
+    scrollY,
   } = useSelector(state => state.diary);
+
+  const latestScrollY = useRef(0);
+  const shouldRestoreScroll = useRef(false);
 
   // 判断是否触底
   const isReachBottom = useCallback(() => {
@@ -139,16 +145,6 @@ const Home = () => {
     const clientHeight = document.documentElement.clientHeight;
     return scrollHeight - scrollTop - clientHeight < 100;
   }, []);
-
-  // 首次加载数据
-  const initLoad = useCallback(async () => {
-    dispatch(resetDiaryList());
-    try {
-      await dispatch(fetchDiaryList({ page: 1, pageSize })).unwrap();
-    } catch (err) {
-      Toast.show({ content: err.message || '加载失败', icon: 'fail' });
-    }
-  }, [dispatch, pageSize]);
 
   // 加载更多数据
   const loadMore = useCallback(async () => {
@@ -160,21 +156,75 @@ const Home = () => {
     }
   }, [dispatch, currentPage, pageSize, loading, hasMore, isReachBottom]);
 
-  useEffect(() => {
-    initLoad();
-  }, [initLoad]);
+  // 保存滚动位置
+  const saveScrollPosition = useCallback(() => {
+    const currentScrollY = latestScrollY.current;
+    if (currentScrollY > 0) {
+      dispatch(setScrollY(currentScrollY));
+    }
+  }, [dispatch]);
 
+  // 恢复滚动位置
+  const restoreScrollPosition = useCallback(() => {
+    if (scrollY > 0 && shouldRestoreScroll.current) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+        shouldRestoreScroll.current = false;
+      });
+    }
+  }, [scrollY]);
+
+  // 初始化加载函数
+  const initLoad = useCallback(async () => {
+    if (hasLoaded) return;
+    try {
+      await dispatch(fetchDiaryList({ page: 1, pageSize })).unwrap();
+      restoreScrollPosition();
+    } catch (err) {
+      Toast.show({ content: err.message || '加载失败', icon: 'fail' });
+    }
+  }, [dispatch, pageSize, hasLoaded, restoreScrollPosition]);
+
+  // 监听滚动事件
   useEffect(() => {
     const handleScroll = () => {
       if (isReachBottom()) {
         loadMore();
       }
+      latestScrollY.current = window.scrollY;
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMore, isReachBottom]);
 
-  
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      saveScrollPosition();
+    };
+  }, [loadMore, isReachBottom, saveScrollPosition]);
+
+  // 路由变化监听
+  useEffect(() => {
+    if (location.pathname === '/' && scrollY > 0) {
+      shouldRestoreScroll.current = true;
+      requestAnimationFrame(() => {
+        restoreScrollPosition();
+      });
+    }
+  }, [location.pathname, scrollY, restoreScrollPosition]);
+
+  // 组件挂载时的处理
+  useEffect(() => {
+    if (scrollY > 0) {
+      shouldRestoreScroll.current = true;
+      requestAnimationFrame(() => {
+        restoreScrollPosition();
+      });
+    }
+  }, [scrollY, restoreScrollPosition]);
+
+  // 初始化加载
+  useEffect(() => {
+    initLoad();
+  }, [initLoad]);
 
   // 处理搜索
   const handleSearch = (value) => {
@@ -183,7 +233,11 @@ const Home = () => {
     dispatch(fetchDiaryList({ page: 1, pageSize, searchKey: value }));
   };
 
+  // 处理卡片点击
   const handleCardClick = (id) => {
+    latestScrollY.current = window.scrollY;
+    saveScrollPosition();
+    shouldRestoreScroll.current = true;
     navigate(`/detail/${id}`);
   };
 
