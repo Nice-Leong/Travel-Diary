@@ -6,16 +6,13 @@ import styled from 'styled-components';
 import { setSearchKey, resetDiaryList, fetchDiaryList, setScrollY } from '@/store/modules/diary'; 
 
 const HomeContainer = styled.div`
-  // background-color: #f5f5f5;
+  background-color: #f5f5f5;
 `;
 
 const SearchContainer = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  // padding: 8px 0;
-  // background-color: #f5f5f5;
-
   .adm-search-bar {
     background-color: #fff;
     border-radius: 18px;
@@ -212,14 +209,14 @@ const Home = () => {
   }, [location.pathname, scrollY, restoreScrollPosition]);
 
   // 组件挂载时的处理
-  useEffect(() => {
-    if (scrollY > 0) {
-      shouldRestoreScroll.current = true;
-      requestAnimationFrame(() => {
-        restoreScrollPosition();
-      });
-    }
-  }, [scrollY, restoreScrollPosition]);
+  // useEffect(() => {
+  //   if (scrollY > 0) {
+  //     shouldRestoreScroll.current = true;
+  //     requestAnimationFrame(() => {
+  //       restoreScrollPosition();
+  //     });
+  //   }
+  // }, [scrollY, restoreScrollPosition]);
 
   // 初始化加载
   useEffect(() => {

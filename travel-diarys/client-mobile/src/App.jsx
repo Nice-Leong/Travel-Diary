@@ -1,18 +1,18 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import './App.css';
+// import React from 'react';
+// import { useLocation } from 'react-router-dom';
+// import './App.css';
 
-function App() {
-  const location = useLocation();
+// function App() {
+//   const location = useLocation();
   
   
-  const isAuthPage = location.pathname === '/login';
+//   const isAuthPage = location.pathname === '/login';
 
-  return (
-    <div className={`app ${isAuthPage ? 'auth-page' : ''}`}>
+//   return (
+//     <div className={`app ${isAuthPage ? 'auth-page' : ''}`}>
       
-    </div>
-  );
-}
+//     </div>
+//   );
+// }
 
-export default App;
+// export default App;

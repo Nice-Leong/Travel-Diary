@@ -1,9 +1,9 @@
-import React from 'react';
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { createBrowserRouter, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Layout from '@/components/Layout';
 import Loading from '@/components/Loading';
-// import Home from '@/views/Home/HomeIndex';
+import { Toast } from 'antd-mobile';
 
 // 懒加载路由组件
 const Home = lazy(() => import('@/views/Home/HomeIndex'));
@@ -22,16 +22,56 @@ const lazyLoad = (Component) => (
 
 // 路由守卫 - 检查是否已登录
 const RequireAuth = ({ children }) => {
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const location = useLocation();
   
   // 需要登录才能访问的路径
   const authRequiredPaths = ['/publish', '/mydiary'];
   
-  // 如果访问需要登录的页面且未登录，重定向到登录页
-  if (authRequiredPaths.includes(location.pathname) && !token) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (authRequiredPaths.includes(location.pathname)) {
+        if (!token) {
+          // 没有token，重定向到登录页
+          navigate('/login', { state: { from: location.pathname } });
+          return;
+        }
+
+        try {
+          // 验证token是否有效
+          const response = await fetch('http://localhost:3000/api/user/verify-token', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            // token无效或过期，清除token并重定向到登录页
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            Toast.show({
+              content: '登录已过期，请重新登录',
+              icon: 'fail'
+            });
+            navigate('/login', { state: { from: location.pathname } });
+          }
+        } catch (error) {
+          console.error('验证token失败:', error);
+          // 发生错误时，清除token并重定向到登录页
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          Toast.show({
+            content: '登录已过期，请重新登录',
+            icon: 'fail'
+          });
+          navigate('/login', { state: { from: location.pathname } });
+        }
+      }
+    };
+
+    checkAuth();
+  }, [location.pathname, token, navigate, authRequiredPaths]);
   
   return children;
 };
@@ -77,7 +117,7 @@ const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/" replace />, // 修改默认重定向到首页
+    element: <Navigate to="/" replace />, 
   },
 ]);
 export default router;

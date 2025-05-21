@@ -170,7 +170,7 @@ const Profile = () => {
         <DefaultProfile>
           <Avatar src={defaultAvatar} />
           <Nickname>旅客</Nickname>
-          <LoginBtn onClick={() => navigate('/login', { state: { from: '/profile' } })}>
+          <LoginBtn onClick={() => navigate('/login')}>
             登录/注册
           </LoginBtn>
         </DefaultProfile>

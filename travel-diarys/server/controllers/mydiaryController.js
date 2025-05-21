@@ -44,12 +44,6 @@ const deleteDiary = async (req, res) => {
   const { id } = req.params;
   
   try {
-    // 验证游记是否存在
-    const diary = await mydiary.getMyDiaryByUserId(id);
-    if (!diary) {
-      return res.status(404).json({ code: 1, message: '游记不存在' });
-    }
-
     // 删除游记
     await mydiary.deleteDiary(id);
     

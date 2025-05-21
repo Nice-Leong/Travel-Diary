@@ -13,21 +13,21 @@ const Container = styled.div`
   overflow: hidden;
 `;
 
-const TagRow = styled.div`
-  margin: 16px 16px 0 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
+// const TagRow = styled.div`
+//   margin: 16px 16px 0 16px;
+//   display: flex;
+//   align-items: center;
+//   gap: 8px;
+// `;
 
-const Tag = styled.span`
-  background: #f2f3f5;
-  color: #666;
-  font-size: 13px;
-  border-radius: 12px;
-  padding: 2px 10px;
-  display: inline-block;
-`;
+// const Tag = styled.span`
+//   background: #f2f3f5;
+//   color: #666;
+//   font-size: 13px;
+//   border-radius: 12px;
+//   padding: 2px 10px;
+//   display: inline-block;
+// `;
 
 const Title = styled.div`
   font-size: 22px;
@@ -336,7 +336,7 @@ const DetailIndex = () => {
           visible={showViewer}
           defaultIndex={viewerIndex >= 0 ? viewerIndex : 0}
           onClose={() => setShowViewer(false)}
-/>
+        />
       </SwiperWrapper>
 
       <LocationBar>

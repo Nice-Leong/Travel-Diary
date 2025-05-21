@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import defaultAvatar from '@/assets/img/default-avatar.png';
+import { userService } from '@/service/modules/user';
 
 const safeParseJSON = (key, defaultValue) => {
   try {
@@ -51,5 +52,15 @@ const userSlice = createSlice({
 });
 
 export const { login, register, logout } = userSlice.actions;
+
+// 验证token的异步action
+export const verifyToken = () => async (dispatch) => {
+  try {
+    await userService.verifyToken();
+  } catch (error) {
+    dispatch(logout());
+    throw error;
+  }
+};
 
 export default userSlice.reducer;

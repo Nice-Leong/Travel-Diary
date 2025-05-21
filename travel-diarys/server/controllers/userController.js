@@ -1,6 +1,7 @@
 const userModel = require('../models/user')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
+const config = require('../config/env')
 
 exports.register = async (req, res) => {
   try {
@@ -16,21 +17,8 @@ exports.register = async (req, res) => {
 
     // 使用 bcrypt 加密密码
     const hash = await bcrypt.hash(password, 10)
-    const userId = await userModel.createUser(username, hash, nickname, avatar || '');
-
-    // 生成 token
-    const token = jwt.sign({ userId }, '你的JWT密钥', { expiresIn: '0.5h' });
-    res.json({ 
-      message: '注册成功',
-      token,
-      userInfo: {
-        id: userId,
-        username,
-        nickname,
-        avatar: avatar || '',
-        bio: ''
-      }
-    })
+    await userModel.createUser(username, hash, nickname, avatar || '');
+    res.json({ message: '注册成功' })
   } catch (error) {
     res.status(500).json({ message: '服务器错误' })
   }
@@ -57,7 +45,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: '用户名或密码错误' })
     }
 
-    const token = jwt.sign({ userId: user.id }, '你的JWT密钥', { expiresIn: '0.5h' })
+    const token = jwt.sign({ userId: user.id }, config.jwt.secret, { expiresIn: config.jwt.expiresIn })
 
     res.json({
       token,

@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { Toast } from 'antd-mobile'
+import { BASE_URL, TIME_OUT } from './config'
 
 const request = axios.create({
-  baseURL: 'http://localhost:3000',
-  timeout: 5000
+  baseURL: BASE_URL,
+  timeout: TIME_OUT
 })
 
 // 请求拦截器
@@ -26,22 +27,35 @@ request.interceptors.response.use(
     return response
   },
   error => {
-    // 处理错误响应
     if (error.response) {
-      // 服务器返回了错误状态码
-      const message = error.response.data?.message || '请求失败'
-      Toast.show({
-        content: message,
-        icon: 'fail'
-      })
+      // 处理401错误
+      if (error.response.status === 401) {
+        // 清除token和用户信息
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+        
+        // 显示提示
+        Toast.show({
+          content: '登录已过期，请重新登录',
+          icon: 'fail'
+        })
+
+        // 重定向到登录页
+        window.location.href = '/login'
+      } else {
+        // 其他错误
+        const message = error.response.data?.message || '请求失败'
+        Toast.show({
+          content: message,
+          icon: 'fail'
+        })
+      }
     } else if (error.request) {
-      // 请求发出但没有收到响应
       Toast.show({
         content: '网络错误，请检查网络连接',
         icon: 'fail'
       })
     } else {
-      // 请求配置出错
       Toast.show({
         content: '请求配置错误',
         icon: 'fail'
